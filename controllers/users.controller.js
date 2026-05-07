@@ -1,15 +1,59 @@
 const UserModel = require("../models/User.model")
-
+const bcrypt = require('bcryptjs')
+const jwt = require('jsonwebtoken')
+const nodemailer = require('nodemailer')
+const transporter = nodemailer.createTransport({
+    service : process.env.MAIL_HOST,
+    auth : {
+        user : process.env.MAIL_USER,
+        pass:process.env.MAIL_PASS
+    }
+})
 const create = async(req , res)=>{
     try{
-        let user = new UserModel(req.body)
+        let data = req.body
+        let pass = req.body.pass
+        let key = await bcrypt.genSalt(12)
+        let hashedPassword = await bcrypt.hash(req.body.password , key)
+        data.password = hashedPassword
+        let user = new UserModel(data)
         await user.save()
+        await transporter.sendMail({
+            from : 'nourhene.epi@gmail.com',
+            to :user.email,
+            subject:'Account',
+            text :'password :'+pass,
+            // html :''
+        })
         res.send('User saved')
     }catch(err){
         res.status(410).send({success : false , message : err.message})
     }
 }
 
+const login = async(req, res)=>{
+    try{
+        let {email , password} =req.body
+        if(!email || !password){
+          return  res.status(406).send({message : 'Missing credentials'})
+        }
+        let user = await UserModel.findOne({email : email})
+        if(!user){
+          return  res.status(406).send({message : 'User not found'})
+        }
+        let isValid = await bcrypt.compare(password , user.password)
+        if(!isValid){
+            return  res.status(406).send({message : 'Invalid password'}) 
+        }
+        let token = jwt.sign(
+            {_id : user._id , role : user.role},
+            process.env.SECRET || '123'
+        )
+        res.send({success : true , token})
+    }catch(err){
+        res.status(410).send({success : false , message : err.message})
+    }
+}
 const getAll = (req , res)=>{
     
     UserModel.find().then((users)=>{
@@ -60,4 +104,4 @@ const remove = async(req , res)=>{
         res.status(430).send(err)
     }
 }
-module.exports = {create, getAll , getByRole , getById , update , remove}
+module.exports = {create, getAll , getByRole , getById , update , remove , login}

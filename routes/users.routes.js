@@ -1,8 +1,9 @@
-const { create, getAll, getByRole, getById, update, remove } = require('../controllers/users.controller');
+const { create, getAll, getByRole, getById, update, remove, login } = require('../controllers/users.controller');
 
 const router = require('express').Router();
 
 router.post('/create' , create)
+router.post('/login' , login)
 router.get('/' , getAll)
 router.get('/role/:role' , getByRole)
 router.get('/:id' , getById)

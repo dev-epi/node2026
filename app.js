@@ -15,6 +15,7 @@ mongoose.connect(process.env.DB)
 
 app.use('/' , require('./routes/index.routes'))
 app.use('/users' , require('./routes/users.routes'))
+app.use('/tasks' , require('./routes/tasks.routes'))
 app.listen(process.env.PORT , ()=>{
     console.log('Server run on '+process.env.PORT)
 })
